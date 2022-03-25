@@ -1,0 +1,10 @@
+[http.middlewares.auth.basicAuth]
+users = [
+  "admin:$2a$12$W/BK5ridta./WM7.7gYn1elIOfGisk0DoLCsEXnfUxEve6p/IQjLi", # admin:password
+]
+
+[http.routers.dashboard]
+entrypoints = ["web"]
+middlewares = ["auth"]
+rule = "Host(`traefik.internal.localhost`)"
+service = "api@internal"

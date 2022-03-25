@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  traefik:
+    image: traefik:v2.6 # The official v2 Traefik docker image
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/traefik.toml:/traefik.toml
+      - ./config/traefik_dynamic.toml:/traefik_dynamic.toml
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: .
+      target: prod
+    container_name: "backend"
+    depends_on:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGODB_USER=admin
+      - MONGODB_PASSWORD=root
+    networks:
+      - internal
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.mongo.rule=Host(`database.localhost`)"
+    #   - "traefik.http.routers.mongo.entrypoints=web"
+    volumes:
+      - todo:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    ports:
+      - 27017:27017
+    networks:
+      - internal
+
+networks:
+  internal:
+    name: internal
+    driver: bridge
+volumes:
+  todo:
